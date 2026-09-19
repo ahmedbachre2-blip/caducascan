@@ -6,9 +6,9 @@ import { Header } from "@/components/Header";
 import { ProductList } from "@/components/ProductList";
 import { SummaryCards } from "@/components/SummaryCards";
 import { ProductsProvider, useProducts } from "@/context/ProductsContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { AuthScreen } from "@/components/AuthScreen";
 import { isoDateOffset, estimateExpiryDays } from "@/lib/expiration";
-
-import CameraCapture from "@/components/CameraCapture";
 
 const ScannerModal = dynamic(
   () => import("@/components/ScannerModal").then((mod) => mod.ScannerModal),
@@ -16,6 +16,35 @@ const ScannerModal = dynamic(
 );
 
 export function CaducaScanApp() {
+  return (
+    <AuthProvider>
+      <AuthGate />
+    </AuthProvider>
+  );
+}
+
+// هذا المكون يتحقق من حالة تسجيل الدخول
+function AuthGate() {
+  const { user, loading } = useAuth();
+
+  // أثناء التحقق من الجلسة
+  if (loading) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-green-600 border-t-transparent"></div>
+          <p className="mt-3 text-sm text-gray-500">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // إذا لم يكن مسجلاً، اعرض شاشة تسجيل الدخول
+  if (!user) {
+    return <AuthScreen />;
+  }
+
+  // إذا كان مسجلاً، اعرض التطبيق
   return (
     <ProductsProvider>
       <HomeScreen />
@@ -25,6 +54,7 @@ export function CaducaScanApp() {
 
 function HomeScreen() {
   const { products, counts, addProduct, applyDiscount } = useProducts();
+  const { user, signOut } = useAuth();
   const [scannerOpen, setScannerOpen] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
@@ -90,6 +120,17 @@ function HomeScreen() {
     <div className="min-h-dvh bg-slate-50">
       <Header />
       <main className="mx-auto flex max-w-lg flex-col gap-5 px-4 pb-28 pt-5">
+        {/* شريط المستخدم */}
+        <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2 text-xs shadow-sm">
+          <span className="truncate text-gray-500">{user?.email}</span>
+          <button
+            onClick={() => signOut()}
+            className="ml-2 rounded-lg bg-red-50 px-3 py-1 font-medium text-red-600"
+          >
+            Salir
+          </button>
+        </div>
+
         <button
           type="button"
           onClick={() => setScannerOpen(true)}
@@ -192,13 +233,6 @@ function HomeScreen() {
             </button>
           </div>
         </div>
-      )}
-
-      {showCamera && (
-        <CameraCapture
-          onCapture={handleCameraCapture}
-          onCancel={() => setShowCamera(false)}
-        />
       )}
     </div>
   );
