@@ -57,7 +57,6 @@ function HomeScreen() {
   const { user, signOut } = useAuth();
   const [scannerOpen, setScannerOpen] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
   const [receiptLoading, setReceiptLoading] = useState(false);
   const [receiptItems, setReceiptItems] = useState<Array<{name: string; quantity?: number; totalPrice?: number}>>([]);
   const [receiptError, setReceiptError] = useState("");
@@ -94,11 +93,6 @@ function HomeScreen() {
       await processReceiptBase64(base64);
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleCameraCapture = async (base64: string) => {
-    setShowCamera(false);
-    await processReceiptBase64(base64);
   };
 
   const handleAddAllItems = () => {
@@ -165,13 +159,16 @@ function HomeScreen() {
 
             {receiptItems.length === 0 && !receiptLoading && (
               <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() => setShowCamera(true)}
-                  className="w-full rounded-xl bg-green-600 py-3 font-semibold text-white"
-                >
+                <label className="block w-full cursor-pointer rounded-xl bg-green-600 py-3 text-center font-semibold text-white">
                   📷 Tomar Foto con Camara
-                </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleReceiptUpload}
+                    className="hidden"
+                  />
+                </label>
 
                 <label className="block w-full cursor-pointer rounded-xl border-2 border-slate-300 py-3 text-center text-sm">
                   📁 O subir archivo

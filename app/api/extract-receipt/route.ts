@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
           let items = [];
           try {
             items = JSON.parse(content);
-          } catch (parseError) {
+          } catch {
             console.error("❌ AI returned invalid JSON:", content);
             lastError = "AI returned invalid JSON format";
             continue; // جرب النموذج التالي
