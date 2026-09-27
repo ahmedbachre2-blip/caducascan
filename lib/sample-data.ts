@@ -10,6 +10,8 @@ export const SAMPLE_PRODUCTS: Product[] = [
     brand: "Danone",
     expirationDate: isoDateOffset(1),
     discounted: false,
+    price: 1.89,
+    quantity: 3,
   },
   {
     id: "p2",
@@ -19,6 +21,8 @@ export const SAMPLE_PRODUCTS: Product[] = [
     brand: "Pascual",
     expirationDate: isoDateOffset(5),
     discounted: false,
+    price: 1.15,
+    quantity: 6,
   },
   {
     id: "p3",
@@ -28,6 +32,8 @@ export const SAMPLE_PRODUCTS: Product[] = [
     brand: "Bimbo",
     expirationDate: isoDateOffset(2),
     discounted: false,
+    price: 2.45,
+    quantity: 2,
   },
   {
     id: "p4",
@@ -36,6 +42,8 @@ export const SAMPLE_PRODUCTS: Product[] = [
     category: "Frutas",
     expirationDate: isoDateOffset(12),
     discounted: false,
+    price: 1.99,
+    quantity: 5,
   },
   {
     id: "p5",
@@ -44,6 +52,8 @@ export const SAMPLE_PRODUCTS: Product[] = [
     category: "Carnes",
     expirationDate: isoDateOffset(0),
     discounted: false,
+    price: 5.90,
+    quantity: 1,
   },
   {
     id: "p6",
@@ -52,6 +62,8 @@ export const SAMPLE_PRODUCTS: Product[] = [
     category: "Verduras",
     expirationDate: isoDateOffset(3),
     discounted: true,
+    price: 2.30,
+    quantity: 2,
   },
   {
     id: "p7",
@@ -61,6 +73,8 @@ export const SAMPLE_PRODUCTS: Product[] = [
     brand: "García Baquero",
     expirationDate: isoDateOffset(8),
     discounted: false,
+    price: 3.20,
+    quantity: 1,
   },
   {
     id: "p8",
@@ -69,5 +83,7 @@ export const SAMPLE_PRODUCTS: Product[] = [
     category: "Charcutería",
     expirationDate: isoDateOffset(4),
     discounted: false,
+    price: 2.80,
+    quantity: 2,
   },
 ];
