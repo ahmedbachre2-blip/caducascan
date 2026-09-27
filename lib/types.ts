@@ -1,6 +1,6 @@
 export type ExpirationStatus = "urgente" | "pronto" | "ok";
 
-export type FilterTab = "todos" | ExpirationStatus;
+export type FilterTab = "todos" | "caducados" | ExpirationStatus;
 
 export type Product = {
   id: string;
@@ -11,6 +11,8 @@ export type Product = {
   imageUrl?: string;
   expirationDate: string;
   discounted: boolean;
+  price: number;
+  quantity: number;
 };
 
 export type ProductDraft = {
@@ -20,4 +22,13 @@ export type ProductDraft = {
   brand?: string;
   imageUrl?: string;
   expirationDate: string;
+  price?: number;
+  quantity?: number;
+};
+
+export type ImpactStats = {
+  savedProducts: number;
+  savedMoney: number;
+  expiredProducts: number;
+  expiredMoney: number;
 };

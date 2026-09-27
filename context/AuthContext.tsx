@@ -7,16 +7,16 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Session, User } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
+import type { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
 
 type AuthContextValue = {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  signOut: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
-  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -39,15 +39,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event: any, session: Session | null) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
+
+  const signOut = async () => {
+    const supabase = getSupabase();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+  };
 
   const signIn = async (email: string, password: string) => {
     const supabase = getSupabase();
@@ -63,14 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
-  const signOut = async () => {
-    const supabase = getSupabase();
-    if (!supabase) return;
-    await supabase.auth.signOut();
-  };
-
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signOut, signIn, signUp }}>
       {children}
     </AuthContext.Provider>
   );

@@ -73,6 +73,50 @@ export function ProductForm({
         />
       </label>
 
+      {/* ✅ حقل السعر الجديد */}
+      <div className="grid grid-cols-2 gap-3">
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-slate-700">
+            Precio (€)
+          </span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={draft.price ?? ""}
+            onChange={(e) =>
+              onChange({
+                ...draft,
+                price: e.target.value ? parseFloat(e.target.value) : 0,
+              })
+            }
+            placeholder="0.00"
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none ring-fresh-500 focus:ring-2"
+          />
+        </label>
+
+        {/* ✅ حقل الكمية الجديد */}
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-slate-700">
+            Cantidad
+          </span>
+          <input
+            type="number"
+            step="1"
+            min="1"
+            value={draft.quantity ?? 1}
+            onChange={(e) =>
+              onChange({
+                ...draft,
+                quantity: e.target.value ? parseInt(e.target.value, 10) : 1,
+              })
+            }
+            placeholder="1"
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none ring-fresh-500 focus:ring-2"
+          />
+        </label>
+      </div>
+
       <label className="block">
         <span className="mb-1 block text-sm font-medium text-slate-700">
           Categoría

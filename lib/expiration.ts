@@ -7,9 +7,10 @@ export function daysUntil(expirationDate: string, now = new Date()): number {
   return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 
+// ✅ التعديل الجديد: Urgente ≤14 días, Pronto 15-25 días, OK >26 días
 export function statusFromDays(days: number): ExpirationStatus {
-  if (days <= 3) return "urgente";
-  if (days <= 7) return "pronto";
+  if (days <= 14) return "urgente";
+  if (days <= 25) return "pronto";
   return "ok";
 }
 

@@ -7,9 +7,10 @@ import { ProductCard } from "./ProductCard";
 
 const TABS: { id: FilterTab; label: string }[] = [
   { id: "todos", label: "Todos" },
-  { id: "urgente", label: "Urgente" },
-  { id: "pronto", label: "Pronto" },
-  { id: "ok", label: "OK" },
+  { id: "urgente", label: "🔴 Urgente" },
+  { id: "pronto", label: "🟠 Pronto" },
+  { id: "ok", label: "🟢 OK" },
+  { id: "caducados", label: "⚫ Caducados" },
 ];
 
 export function ProductList({
@@ -23,6 +24,11 @@ export function ProductList({
 
   const filtered = useMemo(() => {
     if (tab === "todos") return products;
+
+    if (tab === "caducados") {
+      return products.filter((p) => daysUntil(p.expirationDate) < 0);
+    }
+
     return products.filter(
       (product) => statusFromDays(daysUntil(product.expirationDate)) === tab
     );
@@ -52,7 +58,9 @@ export function ProductList({
 
       {filtered.length === 0 ? (
         <p className="rounded-2xl bg-white px-4 py-8 text-center text-sm text-slate-500 ring-1 ring-slate-100">
-          No hay productos en esta categoría.
+          {tab === "caducados"
+            ? "🎉 ¡No hay productos caducados!"
+            : "No hay productos en esta categoría."}
         </p>
       ) : (
         <div className="space-y-3">
