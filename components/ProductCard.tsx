@@ -12,14 +12,26 @@ const STATUS_STYLES = {
 export function ProductCard({
   product,
   onDiscount,
+  onDelete,
 }: {
   product: Product;
   onDiscount: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
   const days = daysUntil(product.expirationDate);
   const status = statusFromDays(days);
   const isExpired = days < 0;
   const totalValue = (product.price || 0) * (product.quantity || 1);
+
+  const handleDelete = () => {
+    const confirmMessage = isExpired
+      ? `¿Eliminar "${product.name}" del inventario?`
+      : `¿Seguro que quieres eliminar "${product.name}"? Esta acción no se puede deshacer.`;
+
+    if (window.confirm(confirmMessage)) {
+      onDelete(product.id);
+    }
+  };
 
   return (
     <article
@@ -58,11 +70,28 @@ export function ProductCard({
           )}
         </div>
 
-        <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${STATUS_STYLES[status]}`}
-        >
-          {formatDaysLabel(days)}
-        </span>
+        {/* أيقونة سلة المحذوفات + حالة الصلاحية */}
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <button
+            type="button"
+            onClick={handleDelete}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
+              isExpired
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-600"
+            }`}
+            aria-label={`Eliminar ${product.name}`}
+            title="Eliminar producto"
+          >
+            <TrashIcon />
+          </button>
+
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${STATUS_STYLES[status]}`}
+          >
+            {formatDaysLabel(days)}
+          </span>
+        </div>
       </div>
 
       <button
@@ -84,5 +113,23 @@ export function ProductCard({
           : "🏷️ Aplicar Descuento"}
       </button>
     </article>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+      />
+    </svg>
   );
 }

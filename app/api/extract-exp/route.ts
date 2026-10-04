@@ -1,53 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-// ✅ قائمة موسعة تضم 27 نموذجاً مجانياً يدعم الرؤية (سبتمبر 2026)
-// مرتبة من الأفضل إلى الأقل، وسيتم تجربة كل واحد بالتتابع
+// ✅ إصلاح مشكلة Vercel Timeout: تعيين الحد الأقصى لمدة الدالة
+export const maxDuration = 60;
+
+// ✅ إصلاح مشكلة Vercel Timeout: تقليص النماذج إلى أفضل 3 نماذج سريعة ومستقرة فقط
 const FREE_VISION_MODELS = [
-  // --- Google Gemini (الأكثر استقراراً) ---
   "google/gemini-2.0-flash-exp:free",
-  "google/gemini-flash-1.5-8b:free",
-  "google/gemini-2.5-flash-preview:free",
-  "google/gemma-4-31b-it:free",
-  "google/gemma-4-26b-a4b-it:free",
-  
-  // --- Qwen (ممتاز للصور والنصوص) ---
   "qwen/qwen2.5-vl-72b-instruct:free",
-  "qwen/qwen2.5-vl-32b-instruct:free",
-  "qwen/qwen2.5-vl-7b-instruct:free",
-  "qwen/qwen-2-vl-7b-instruct:free",
-  "qwen/qwen2-vl-7b-instruct:free",
-  
-  // --- Meta Llama (قوي ومجاني) ---
-  "meta-llama/llama-3.2-11b-vision-instruct:free",
-  "meta-llama/llama-3.2-90b-vision-instruct:free",
-  "meta-llama/llama-3.1-70b-instruct:free",
-  
-  // --- Nvidia ---
-  "nvidia/nemotron-nano-12b-v2-vl:free",
-  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-  "nvidia/nemotron-3-super-120b-a12b:free",
-  "nvidia/nemotron-3-ultra-550b-a55b:free",
-  
-  // --- Microsoft ---
-  "microsoft/phi-3.5-vision-instruct:free",
-  
-  // --- Mistral ---
-  "mistralai/mistral-small-3.1-24b-instruct:free",
-  "mistralai/mistral-nemo:free",
-  
-  // --- نماذج أخرى ---
-  "inclusionai/ling-3.0-flash-vl:free",
-  "dots-studio/dots-3-note-preview:free",
-  "z-ai/glm-4.5-air:free",
-  "deepseek/deepseek-r1:free",
-  "xiaomi/mimo-v2-flash:free",
-  
-  // --- Router ذكي (يختار أفضل نموذج تلقائياً) ---
-  "openrouter/free",
+  "google/gemini-flash-1.5-8b:free",
 ];
 
 export async function POST(req: NextRequest) {
   try {
+    // ✅ إصلاح ثغرة API Abuse: التحقق من هوية المستخدم عبر Supabase
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name) { return cookieStore.get(name)?.value },
+          set(name, value, options) { cookieStore.set({ name, value, ...options }) },
+          remove(name, options) { cookieStore.set({ name, value: '', ...options }) },
+        },
+      }
+    );
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized. Please log in to use this feature." }, 
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const base64Image = body.imageBase64;
 
@@ -118,6 +107,8 @@ Do NOT include any markdown formatting, explanations, or additional text. Only t
               max_tokens: 150,
               temperature: 0.1,
             }),
+            // ✅ إصلاح مشكلة Vercel Timeout: إضافة مهلة زمنية 5 ثوانٍ لكل طلب
+            signal: AbortSignal.timeout(5000),
           }
         );
 

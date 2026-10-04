@@ -1,17 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-// قائمة أفضل النماذج المجانية (سبتمبر 2026)
+// ✅ إصلاح مشكلة Vercel Timeout: تعيين الحد الأقصى لمدة الدالة
+export const maxDuration = 60;
+
+// ✅ إصلاح مشكلة Vercel Timeout: تقليص النماذج إلى أفضل 3 نماذج سريعة ومستقرة فقط
 const FREE_VISION_MODELS = [
-  "inclusionai/ling-3.0-flash-vl:free",
-  "qwen/qwen2.5-vl-72b-instruct:free",
-  "qwen/qwen2.5-vl-7b-instruct:free",
   "google/gemini-2.0-flash-exp:free",
-  "google/gemma-4-31b-it:free",
-  "nvidia/nemotron-nano-12b-v2-vl:free",
+  "qwen/qwen2.5-vl-72b-instruct:free",
+  "inclusionai/ling-3.0-flash-vl:free",
 ];
 
 export async function POST(req: NextRequest) {
   try {
+    // ✅ إصلاح ثغرة API Abuse: التحقق من هوية المستخدم عبر Supabase
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name) { return cookieStore.get(name)?.value },
+          set(name, value, options) { cookieStore.set({ name, value, ...options }) },
+          remove(name, options) { cookieStore.set({ name, value: '', ...options }) },
+        },
+      }
+    );
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized. Please log in to use this feature." }, 
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     // ✅ تم تصحيح الاسم هنا ليتطابق مع ما ترسله الواجهة
     const base64Image = body.imageBase64; 
@@ -39,6 +64,8 @@ export async function POST(req: NextRequest) {
           headers: {
             Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
+            "HTTP-Referer": "https://caducascan-es.vercel.app",
+            "X-Title": "CaducaScan",
           },
           body: JSON.stringify({
             model: modelId,
@@ -61,6 +88,8 @@ export async function POST(req: NextRequest) {
             max_tokens: 1500,
             temperature: 0.1,
           }),
+          // ✅ إصلاح مشكلة Vercel Timeout: إضافة مهلة زمنية 5 ثوانٍ لكل طلب
+          signal: AbortSignal.timeout(5000),
         });
 
         // إذا نجح الطلب

@@ -16,9 +16,11 @@ const TABS: { id: FilterTab; label: string }[] = [
 export function ProductList({
   products,
   onDiscount,
+  onDelete,
 }: {
   products: Product[];
   onDiscount: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
   const [tab, setTab] = useState<FilterTab>("todos");
 
@@ -69,6 +71,7 @@ export function ProductList({
               key={product.id}
               product={product}
               onDiscount={onDiscount}
+              onDelete={onDelete}
             />
           ))}
         </div>
