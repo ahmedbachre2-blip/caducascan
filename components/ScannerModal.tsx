@@ -13,6 +13,15 @@ type ExtractedItem = {
   quantity?: number;
 };
 
+// نوع استجابة الـ API
+type ApiItem = {
+  name?: string;
+  expirationDate?: string | null;
+  totalPrice?: number;
+  price?: number;
+  quantity?: number;
+};
+
 // ✅ دالة ضغط الصور لتجنب خطأ 413 على Vercel
 const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -46,24 +55,12 @@ const compressImage = (file: File): Promise<string> => {
         ctx?.drawImage(img, 0, 0, width, height);
 
         const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-        const base64 = dataUrl.split(",")[1];
-        resolve(base64);
+        resolve(dataUrl.split(",")[1]);
       };
       img.onerror = (error) => reject(error);
     };
     reader.onerror = (error) => reject(error);
   });
-};
-
-// ✅ دالة تحويل Base64 إلى File (لإعادة استخدام compressImage)
-const base64ToFile = (base64: string, filename: string): File => {
-  const byteString = atob(base64);
-  const ab = new ArrayBuffer(byteString.length);
-  const ia = new Uint8Array(ab);
-  for (let i = 0; i < byteString.length; i++) {
-    ia[i] = byteString.charCodeAt(i);
-  }
-  return new File([ab], filename, { type: "image/jpeg" });
 };
 
 export function ScannerModal({
@@ -83,7 +80,7 @@ export function ScannerModal({
   const [message, setMessage] = useState("");
   const [items, setItems] = useState<ExtractedItem[]>([]);
 
-  // ✅ إيقاف الكاميرا
+  // إيقاف الكاميرا
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -91,7 +88,7 @@ export function ScannerModal({
     }
   }, []);
 
-  // ✅ تحليل الصورة عبر الـ API
+  // تحليل الصورة عبر الـ API
   const analyzeImage = useCallback(async (base64: string) => {
     setStep("loading");
     setMessage("Analizando factura...");
@@ -111,8 +108,8 @@ export function ScannerModal({
         return;
       }
 
-      const extractedItems: ExtractedItem[] = (data.items || []).map(
-        (item: any) => ({
+      const extractedItems: ExtractedItem[] = ((data.items || []) as ApiItem[]).map(
+        (item) => ({
           name: item.name || "Producto sin nombre",
           expirationDate: item.expirationDate || null,
           price: item.totalPrice || item.price || 0,
@@ -121,7 +118,9 @@ export function ScannerModal({
       );
 
       if (extractedItems.length === 0) {
-        setMessage("No se encontraron productos en la factura. Intenta con una foto más clara.");
+        setMessage(
+          "No se encontraron productos en la factura. Intenta con una foto más clara."
+        );
         setStep("error");
         return;
       }
@@ -134,7 +133,7 @@ export function ScannerModal({
     }
   }, []);
 
-  // ✅ التقاط صورة من الكاميرا
+  // التقاط صورة من الكاميرا
   const captureFromCamera = useCallback(async () => {
     if (!videoRef.current) return;
 
@@ -153,7 +152,7 @@ export function ScannerModal({
     await analyzeImage(base64);
   }, [analyzeImage, stopCamera]);
 
-  // ✅ اختيار صورة من المعرض
+  // اختيار صورة من المعرض
   const handleGalleryUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -171,7 +170,7 @@ export function ScannerModal({
     [analyzeImage, stopCamera]
   );
 
-  // ✅ إدارة فتح/إغلاق النافذة والكاميرا
+  // إدارة فتح/إغلاق النافذة والكاميرا
   useEffect(() => {
     if (!open) {
       stopCamera();
@@ -199,7 +198,9 @@ export function ScannerModal({
           streamRef.current = stream;
         }
       } catch {
-        setMessage("No se pudo acceder a la cámara. Verifica los permisos del navegador.");
+        setMessage(
+          "No se pudo acceder a la cámara. Verifica los permisos del navegador."
+        );
         setStep("error");
       }
     };
@@ -214,19 +215,23 @@ export function ScannerModal({
     };
   }, [open, stopCamera]);
 
-  // ✅ تحديث عنصر معين في القائمة
-  const updateItem = (index: number, field: keyof ExtractedItem, value: any) => {
+  // تحديث عنصر معين في القائمة
+  const updateItem = (
+    index: number,
+    field: keyof ExtractedItem,
+    value: string | number | null
+  ) => {
     setItems((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
     );
   };
 
-  // ✅ حذف عنصر من القائمة
+  // حذف عنصر من القائمة
   const removeItem = (index: number) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // ✅ حفظ جميع المنتجات
+  // حفظ جميع المنتجات
   const handleSaveAll = () => {
     const drafts: ProductDraft[] = items.map((item) => ({
       barcode: "",
@@ -269,7 +274,7 @@ export function ScannerModal({
           </button>
         </div>
 
-        {/* ====== خطوة الكاميرا ====== */}
+        {/* خطوة الكاميرا */}
         {step === "camera" && (
           <div>
             <div className="relative overflow-hidden rounded-2xl bg-slate-900">
@@ -281,12 +286,10 @@ export function ScannerModal({
                 autoPlay
               />
 
-              {/* إطار التوجيه */}
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div className="h-[80%] w-[85%] rounded-2xl border-2 border-green-400/60" />
               </div>
 
-              {/* نص التعليمات */}
               <div className="pointer-events-none absolute bottom-4 left-0 right-0 text-center">
                 <p className="mx-auto inline-block rounded-full bg-black/60 px-4 py-1.5 text-xs text-white">
                   Coloca la factura dentro del marco
@@ -294,9 +297,7 @@ export function ScannerModal({
               </div>
             </div>
 
-            {/* أزرار التحكم */}
             <div className="mt-4 flex items-center justify-center gap-4">
-              {/* زر المعرض */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -306,34 +307,15 @@ export function ScannerModal({
                 🖼️
               </button>
 
-              {/* زر التصوير */}
               <button
                 type="button"
                 onClick={captureFromCamera}
                 className="flex h-20 w-20 items-center justify-center rounded-full bg-green-600 text-white shadow-lg ring-4 ring-green-200 hover:bg-green-700"
                 aria-label="Capturar"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-8 w-8"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
+                <CameraIcon />
               </button>
 
-              {/* مساحة فارغة للتوازن البصري */}
               <div className="h-14 w-14" />
             </div>
 
@@ -351,7 +333,7 @@ export function ScannerModal({
           </div>
         )}
 
-        {/* ====== خطوة التحميل ====== */}
+        {/* خطوة التحميل */}
         {step === "loading" && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-600 border-t-transparent"></div>
@@ -362,7 +344,7 @@ export function ScannerModal({
           </div>
         )}
 
-        {/* ====== خطوة الخطأ ====== */}
+        {/* خطوة الخطأ */}
         {step === "error" && (
           <div className="space-y-4">
             <div className="rounded-xl bg-red-50 p-4 text-center">
@@ -382,7 +364,7 @@ export function ScannerModal({
           </div>
         )}
 
-        {/* ====== خطوة النتائج ====== */}
+        {/* خطوة النتائج */}
         {step === "results" && (
           <div className="space-y-3">
             <p className="text-xs text-slate-500">
@@ -398,7 +380,6 @@ export function ScannerModal({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 space-y-2">
-                      {/* اسم المنتج */}
                       <input
                         type="text"
                         value={item.name}
@@ -409,7 +390,6 @@ export function ScannerModal({
                         placeholder="Nombre del producto"
                       />
 
-                      {/* التاريخ والسعر */}
                       <div className="grid grid-cols-2 gap-2">
                         <input
                           type="date"
@@ -442,33 +422,19 @@ export function ScannerModal({
                       )}
                     </div>
 
-                    {/* زر الحذف */}
                     <button
                       type="button"
                       onClick={() => removeItem(index)}
                       className="rounded-lg bg-red-50 p-2 text-red-600 hover:bg-red-100"
                       aria-label="Eliminar"
                     >
-                      <svg
-                        viewBox="0 0 24 24"
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
+                      <TrashIcon />
                     </button>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* أزرار الحفظ والإلغاء */}
             <div className="flex gap-2 pt-2">
               <button
                 type="button"
@@ -493,5 +459,47 @@ export function ScannerModal({
         )}
       </div>
     </div>
+  );
+}
+
+// الأيقونات
+function CameraIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-8 w-8"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+      />
+    </svg>
   );
 }
